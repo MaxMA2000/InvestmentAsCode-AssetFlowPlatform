@@ -14,7 +14,7 @@ database_name = "ingestion_database"
 collection_name = "stock_list"
 
 
-def send_get_request(api_url):
+def send_get_request():
   try:
     # Send GET request to API
     response = requests.get(api_url)
