@@ -19,7 +19,7 @@ def send_get_request():
     # Send GET request to API
     response = requests.get(api_url)
 
-    if response.status_code == 200:
+    if response.status_code != 200:
        return f"Error: Unexpected response {response}"
 
     data = response.json()
