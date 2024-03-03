@@ -5,9 +5,7 @@ from InvestmentAsCode_AssetFlowPlatform.data_processing.savers.mongo_saver impor
 loader_config = {
   "api_url": "https://financialmodelingprep.com/api/v3/stock/list",
   "api_key_name": "FMP_API_KEY",
-  "parameters": {
-    "query": "AA"
-  }
+  "parameters": {}
 }
 
 api_loader = ApiLoader(loader_config)
