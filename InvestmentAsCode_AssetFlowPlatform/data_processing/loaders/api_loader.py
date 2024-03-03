@@ -1,6 +1,6 @@
 import os
 import requests
-from loader import Loader
+from .loader import Loader
 from dotenv import load_dotenv
 from typing import Dict, Any
 
@@ -14,11 +14,11 @@ class ApiLoader(Loader):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.api_url = config.get("api_url")
-        self.__api_key = os.getenv('FMP_API_KEY')
+        self.__api_key = os.getenv(config.get("api_key_name"))
         self.parameters = self._add_api_key(config.get("parameters"))
 
     def _add_api_key(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
-        parameters["api_key"] = self.__api_key
+        parameters["apikey"] = self.__api_key
         return parameters
 
     def fetch_data(self) -> Any:
