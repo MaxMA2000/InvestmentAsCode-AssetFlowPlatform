@@ -4,6 +4,7 @@ from typing import Dict, Any, Callable
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from pymongo.pool import Pool
+from pymongo.mongo_client import MongoClient
 
 load_dotenv()
 
@@ -35,7 +36,7 @@ class MongoDBManager:
             connection.close()
 
     @staticmethod
-    def check_database_exists(client, database_name):
+    def check_database_exists(client: MongoClient, database_name):
         try:
             if database_name in client.list_database_names():
                 print(f"The database '{database_name}' exists.")
@@ -48,7 +49,7 @@ class MongoDBManager:
             return False
 
     @staticmethod
-    def check_collection_exists(client, database_name: str, collection_name: str):
+    def check_collection_exists(client: MongoClient, database_name: str, collection_name: str):
         try:
             database = client[database_name]
             collection_names = database.list_collection_names()
@@ -94,13 +95,9 @@ class MongoDBManager:
 
         return wrapper
 
-    def remove_collection(self, config: Dict[str, str]):
-        connection = self.acquire_connection()
-        database_name = config.get("database_name")
-        collection_name = config.get("collection_name")
-
-        # Connect to MongoDB
-        db = connection[database_name]
+    @staticmethod
+    def remove_collection(client: MongoClient, database_name: str, collection_name: str):
+        db = client[database_name]
         collection = db[collection_name]
 
         # Remove the collection
@@ -108,6 +105,3 @@ class MongoDBManager:
         print(
             f"The collection '{collection_name}' has been removed from the '{database_name}' database."
         )
-
-        # Release the connection
-        self.release_connection(connection)
