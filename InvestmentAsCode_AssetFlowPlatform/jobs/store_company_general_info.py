@@ -1,10 +1,7 @@
 from datetime import date
 
-# Import Loaders
+# Import Loaders & Savers
 from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.api_loader import ApiLoader
-from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.mongo_loader import MongoLoader
-
-# Import Savers
 from InvestmentAsCode_AssetFlowPlatform.data_processing.savers.mongo_saver import MongoSaver
 
 ###################################

@@ -1,15 +1,39 @@
+from datetime import date
+
+# Import Loaders & Savers
 from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.api_loader import ApiLoader
 from InvestmentAsCode_AssetFlowPlatform.data_processing.savers.mongo_saver import MongoSaver
 
+###################################
+# Load Data
+###################################
+
 # Load the data from API
-loader_config = {
+api_loader_config = {
   "api_url": "https://financialmodelingprep.com/api/v3/stock/list",
   "api_key_name": "FMP_API_KEY",
   "parameters": {}
 }
 
-api_loader = ApiLoader(loader_config)
-data = api_loader.fetch_data()
+api_loader = ApiLoader(api_loader_config)
+new_data = api_loader.fetch_data()
+
+###################################
+# Transform Data
+###################################
+
+def add_date_to_data(data):
+    today = date.today().strftime("%Y-%m-%d")
+    for item in data:
+        item['date'] = today
+    return data
+
+
+new_data_with_date = add_date_to_data(new_data)
+
+###################################
+# Save Data
+###################################
 
 # Save the data into MongoDB
 saver_config= {
@@ -18,6 +42,6 @@ saver_config= {
 }
 
 saver = MongoSaver(saver_config)
-saver.save_data(data)
+saver.replace_collection(new_data_with_date)
 
 
