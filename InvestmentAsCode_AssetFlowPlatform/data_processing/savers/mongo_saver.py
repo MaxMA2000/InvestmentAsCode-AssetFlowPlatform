@@ -1,9 +1,11 @@
 import os
 from pymongo import MongoClient
-from .saver import Saver
-from dotenv import load_dotenv
 from typing import Dict, Any, List
 
+from .saver import Saver
+from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.mongo_manager import MongoDBManager
+
+from dotenv import load_dotenv
 load_dotenv()
 
 class MongoSaver(Saver):
@@ -11,13 +13,13 @@ class MongoSaver(Saver):
 
     def __init__(self, config: Dict[str, str]):
         super().__init__(config)
+
         self.database_name = config.get('database_name')
         self.collection_name = config.get('collection_name')
-        self.mongo_server_url = self._add_mongo_server_url()
 
-    @staticmethod
-    def _add_mongo_server_url() -> str:
-        return os.getenv('MONGO_SERVER_URL')
+        self.manager = MongoDBManager()
+        self.client = self.manager.connect_mongo_db()
+
 
     def save_data(self, data: List[Dict[str, Any]]):
         # Create a MongoDB client and connect to the MongoDB server
