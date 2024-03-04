@@ -4,6 +4,8 @@ from .saver import Saver
 from dotenv import load_dotenv
 from typing import Dict, Any, List
 
+load_dotenv()
+
 class MongoSaver(Saver):
     """Child class to save data to MongoDB"""
 

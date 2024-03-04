@@ -1,35 +1,27 @@
 import os
-from .loader import Loader
 from pymongo import MongoClient
 from typing import Dict, Any, Callable
+from dotenv import load_dotenv
+
+from .loader import Loader
+from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.mongo_manager import MongoDBManager
+
+load_dotenv()
 
 class MongoLoader(Loader):
 
     def __init__(self, config: Dict[str, str]):
         super().__init__(config)
+
         self.database_name = config.get('database_name')
         self.collection_name = config.get('collection_name')
-        self.mongo_server_url = self._add_mongo_server_url()
-        self.client = self._connect_mongodb()
 
-    @staticmethod
-    def _add_mongo_server_url() -> str:
-        return os.getenv('MONGO_SERVER_URL')
+        self.manager = MongoDBManager()
+        self.client = self.connect_mongo_db()
 
-
-    def close_mongodb_connection(self):
-      self.client.close()
-      print(f"Successfully Stop connecting with MongoDB at {self.mongo_server_url}")
-      self.client = None
-
-    def _connect_mongodb(self):
-      try:
-        client = MongoClient(self.mongo_server_url)
-        print(f"Successfully connected with MongoDB at {self.mongo_server_url}")
-        return client
-      except:
-        error_message = f"Having Error Connecting MongoDB at {self.mongo_server_url}"
-        raise ValueError(error_message)
+    def connect_mongo_db(self):
+        self.manager.initialize_pool()
+        return self.manager.acquire_connection()
 
     def check_database_exists(self):
       try:
