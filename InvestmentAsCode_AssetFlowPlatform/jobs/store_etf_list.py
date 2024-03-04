@@ -1,8 +1,8 @@
-from datetime import date
-
 # Import Loaders & Savers
 from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.api_loader import ApiLoader
 from InvestmentAsCode_AssetFlowPlatform.data_processing.savers.mongo_saver import MongoSaver
+
+from InvestmentAsCode_AssetFlowPlatform.utils.common_utils import add_date_to_data
 
 ###################################
 # Load Data
@@ -21,13 +21,6 @@ new_data = api_loader.fetch_data()
 ###################################
 # Transform Data
 ###################################
-
-def add_date_to_data(data):
-    today = date.today().strftime("%Y-%m-%d")
-    for item in data:
-        item['date'] = today
-    return data
-
 
 new_data_with_date = add_date_to_data(new_data)
 
