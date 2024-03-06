@@ -4,36 +4,42 @@ from InvestmentAsCode_AssetFlowPlatform.data_processing.savers.mongo_saver impor
 
 from InvestmentAsCode_AssetFlowPlatform.utils.common_utils import add_date_to_data
 
-###################################
-# Load Data
-###################################
+import os
+os.environ["no_proxy"] = "*"
 
-# Load the data from API
-api_loader_config = {
-  "api_url": "https://financialmodelingprep.com/api/v3/stock/list",
-  "api_key_name": "FMP_API_KEY",
-  "parameters": {}
-}
+def task():
+  ###########################################################
+  # Load Data
+  ###########################################################
 
-api_loader = ApiLoader(api_loader_config)
-new_data = api_loader.fetch_data()
+  # Load the data from API
+  api_loader_config = {
+    "api_url": "https://financialmodelingprep.com/api/v3/stock/list",
+    "api_key_name": "FMP_API_KEY",
+    "parameters": {}
+  }
 
-###################################
-# Transform Data
-###################################
+  api_loader = ApiLoader(api_loader_config)
+  new_data = api_loader.fetch_data()
 
-new_data_with_date = add_date_to_data(new_data)
+  ###########################################################
+  # Transform Data
+  ###########################################################
 
-###################################
-# Save Data
-###################################
+  new_data_with_date = add_date_to_data(new_data)
 
-# Save the data into MongoDB
-saver_config= {
-    "database_name": "ingestion_database",
-    "collection_name": "stock_list"
-}
+  ###########################################################
+  # Save Data
+  ###########################################################
 
-saver = MongoSaver(saver_config)
-saver.replace_collection(new_data_with_date)
+  # Save the data into MongoDB
+  saver_config= {
+      "database_name": "ingestion_database",
+      "collection_name": "stock_list"
+  }
 
+  saver = MongoSaver(saver_config)
+  saver.replace_collection(new_data_with_date)
+
+if __name__ == "__main__":
+    task()
