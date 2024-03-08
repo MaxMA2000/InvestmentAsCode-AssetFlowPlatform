@@ -6,7 +6,7 @@ from InvestmentAsCode_AssetFlowPlatform.jobs import store_company_general_info
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_etf_list
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_stock_list
 
-schedule_interval = "0 18 * * *"
+schedule_interval = "0 15 * * *"
 
 default_args = {
     "owner": "airflow",
@@ -29,9 +29,4 @@ with DAG(
         python_callable=store_etf_list.task,
     )
 
-    task_3 = PythonOperator(
-        task_id="store_stock_list",
-        python_callable=store_stock_list.task,
-    )
-
-    task_1 >> task_2 >> task_3
+    task_1 >> task_2
