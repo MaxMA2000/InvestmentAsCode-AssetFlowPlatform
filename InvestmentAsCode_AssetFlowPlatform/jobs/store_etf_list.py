@@ -34,7 +34,7 @@ def task():
 
   # Save the data into MongoDB
   saver_config= {
-      "database_name": "ingestion_database",
+      "database_name": "ingestion-general_info",
       "collection_name": "exchange_traded_fund_list"
   }
 
