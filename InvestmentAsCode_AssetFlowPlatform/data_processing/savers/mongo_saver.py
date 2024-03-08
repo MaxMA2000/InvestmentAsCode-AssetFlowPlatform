@@ -26,7 +26,7 @@ class MongoSaver(Saver):
         collection = db[self.collection_name]
 
         # Insert each item into the collection
-        print(f"Start writing data to MongoDB...")
+        print(f"Start writing data to MongoDB [Database: {self.database_name}], [Collection: {self.collection_name}]")
         collection.insert_many(data)
         print(f"Finish writing data to MongoDB")
 

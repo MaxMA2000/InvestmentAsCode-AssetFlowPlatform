@@ -23,8 +23,7 @@ class MongoLoader(Loader):
     def fetch_data(self):
       pass
 
-    @MongoDBManager.ensure_database_exists
-    @MongoDBManager.ensure_collection_exists
+
     def load_data(self):
       db = self.client[self.database_name]
       collection = db[self.collection_name]
@@ -35,3 +34,25 @@ class MongoLoader(Loader):
       print("Finish loading data from MongoDB")
 
       return data
+
+
+    @MongoDBManager.ensure_database_exists
+    @MongoDBManager.ensure_collection_exists
+    def load_data_with_checking(self):
+      return self.load_data()
+
+    @MongoDBManager.ensure_database_exists
+    @MongoDBManager.ensure_collection_exists
+    def get_collection_min_max_dates(self, date_key: str):
+      db = self.client[self.database_name]
+      collection = db[self.collection_name]
+      dates = [doc[date_key] for doc in collection.find({}, {date_key: 1})]
+
+      if not dates:
+          raise ValueError(f" Didn't find '{date_key}' in [Database: {self.database_name}], [Collection: {self.collection_name}]")
+          # return None, None
+
+      min_date = min(dates)
+      max_date = max(dates)
+
+      return min_date, max_date
