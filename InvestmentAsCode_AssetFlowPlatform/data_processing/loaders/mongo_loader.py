@@ -80,3 +80,21 @@ class MongoLoader(Loader):
       max_date = max(dates)
 
       return min_date, max_date
+
+
+    @MongoDBManager.ensure_database_exists
+    def get_collection_list_from_database(self):
+      db = self.client[self.database_name]
+      collection_names = db.list_collection_names()
+
+      collection_list = []
+
+      # Check if there are any collections
+      if collection_names:
+          print(f"Found Collections in {self.database_name}")
+          for collection_name in collection_names:
+              collection_list.append(collection_name)
+      else:
+          print(f"No collections found in {self.database_name}")
+
+      return collection_list
