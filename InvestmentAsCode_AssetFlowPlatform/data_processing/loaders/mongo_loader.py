@@ -19,6 +19,30 @@ class MongoLoader(Loader):
         self.manager = MongoDBManager()
         self.client = self.manager.connect_mongo_db()
 
+    @classmethod
+    def create_without_parameters(cls):
+        config = {
+            'database_name': 'admin',
+            'collection_name': 'admin'
+        }
+        return cls(config)
+
+    @property
+    def database_name(self):
+        return self._database_name
+
+    @database_name.setter
+    def database_name(self, value):
+        self._database_name = value
+
+    @property
+    def collection_name(self):
+        return self._collection_name
+
+    @collection_name.setter
+    def collection_name(self, value):
+        self._collection_name = value
+
 
     def fetch_data(self):
       pass
