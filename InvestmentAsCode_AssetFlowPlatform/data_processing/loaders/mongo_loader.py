@@ -1,4 +1,5 @@
 import os
+from typing import List, Any
 from pymongo import MongoClient
 from typing import Dict, Any, Callable
 
@@ -98,3 +99,11 @@ class MongoLoader(Loader):
           print(f"No collections found in {self.database_name}")
 
       return collection_list
+
+    @MongoDBManager.ensure_database_exists
+    @MongoDBManager.ensure_collection_exists
+    def get_unique_value(self, key: str) -> List[Any]:
+        db = self.client[self.database_name]
+        collection = db[self.collection_name]
+        value_list = collection.distinct(key)
+        return value_list
