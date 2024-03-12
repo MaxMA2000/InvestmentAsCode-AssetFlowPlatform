@@ -107,3 +107,12 @@ class MongoLoader(Loader):
         collection = db[self.collection_name]
         value_list = collection.distinct(key)
         return value_list
+
+    @MongoDBManager.ensure_database_exists
+    @MongoDBManager.ensure_collection_exists
+    def find_items_by_key_value(self, key: str, value: Any) -> List[Any]:
+        db = self.client[self.database_name]
+        collection = db[self.collection_name]
+        query = {key: value}
+        items = list(collection.find(query))
+        return items
