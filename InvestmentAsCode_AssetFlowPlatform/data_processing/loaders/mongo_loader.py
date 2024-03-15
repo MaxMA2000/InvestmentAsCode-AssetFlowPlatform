@@ -1,7 +1,8 @@
 import os
-from typing import List, Any
-from pymongo import MongoClient
+import sys
+from datetime import datetime
 from typing import Dict, Any, Callable
+from pymongo import MongoClient
 
 from .loader import Loader
 from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.mongo_manager import MongoDBManager
@@ -116,3 +117,24 @@ class MongoLoader(Loader):
         query = {key: value}
         items = list(collection.find(query))
         return items
+
+
+    @MongoDBManager.ensure_database_exists
+    @MongoDBManager.ensure_collection_exists
+    def filter_collection_by_date(self, date_key: str, input_date: str, comparison_operator: str):
+      db = self.client[self.database_name]
+      collection = db[self.collection_name]
+
+      # Define the filter query based on the comparison operator
+      filter_query = {}
+      if comparison_operator == '=':
+          filter_query = {date_key: input_date}
+      elif comparison_operator == '>':
+          filter_query = {date_key: {'$gt': input_date}}
+      elif comparison_operator == '<':
+          filter_query = {date_key: {'$lt': input_date}}
+
+      # Filter documents by date
+      filtered_documents = collection.find(filter_query)
+
+      return list(collection.find(filter_query))
