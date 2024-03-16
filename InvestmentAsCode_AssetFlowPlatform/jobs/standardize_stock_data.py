@@ -6,6 +6,7 @@ import psycopg2
 from dotenv import load_dotenv
 
 from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.mongo_loader import MongoLoader
+from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.postgres_manager import PostgresManager
 
 load_dotenv()
 
@@ -18,15 +19,9 @@ def task(stock_symbol: str) -> None:
   stock_info = get_stock_info(stock_symbol)
 
   # Establish a connection to the PostgreSQL database
-  conn = psycopg2.connect(
-      host = os.getenv("POSTGRES_HOST"),
-      port = os.getenv("POSTGRES_PORT"),
-      database = os.getenv("POSTGRES_DATABASE"),
-      user = os.getenv("POSTGRES_USER"),
-      password = os.getenv("POSTGRES_PASSWORD")
-  )
-  # Create a cursor object to execute SQL queries
-  cursor = conn.cursor()
+  postgre_manager = PostgresManager()
+  conn = postgre_manager.conn
+  cursor = postgre_manager.cursor
 
   stock_postgres_asset_id = standardize_stock_info_to_postgres(cursor, stock_symbol, stock_info)
 
@@ -96,14 +91,14 @@ def standardize_stock_info_to_postgres(cursor: psycopg2.extensions.cursor, stock
       new_asset_id = cursor.fetchone()[0]
       print("New asset inserted with asset_id:", new_asset_id)
       stock_postgres_asset_id = new_asset_id
-  elif existing_asset_id is not None & len(existing_asset_id) == 1:
+  elif existing_asset_id is not None:
       # Update the existing row
       cursor.execute("UPDATE asset SET name = %s, exchange = %s, exchange_short_name = %s, type = %s, as_of_date = %s WHERE asset_id = %s",
                   (stock_name, stock_exchange, stock_exchangeShortName, stock_type, stock_date, existing_asset_id[0]))
       print("Existing asset updated.")
       stock_postgres_asset_id = existing_asset_id
   else:
-    raise ValueError(f"existing_asset_id should only has 0/1 value, instead it's having {len(existing_asset_id)} value, meaning multiple '{stock_symbol}' exists in PostgreSQL ASSET table. Please Check ")
+    raise ValueError(f"existing_asset_id should only has 0/1 value, instead it's having {existing_asset_id} value, meaning multiple '{stock_symbol}' exists in PostgreSQL ASSET table. Please Check ")
 
   return stock_postgres_asset_id
 
