@@ -154,6 +154,7 @@ def get_stock_price_data(is_stock_exist_in_collection, stock_symbol, stock_histo
         print(f"New stock prices dates to be added: {str(append_dates)}")
         if len(append_dates) == 0:
             print("There is no new stock prices to be added")
+            return None
 
         stock_price_data = new_stock_prices_to_add
     else:
