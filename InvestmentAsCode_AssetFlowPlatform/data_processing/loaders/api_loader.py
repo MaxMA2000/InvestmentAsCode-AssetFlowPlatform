@@ -2,7 +2,7 @@ import os
 import requests
 from .loader import Loader
 from dotenv import load_dotenv
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 load_dotenv()
 
@@ -18,10 +18,24 @@ class ApiLoader(Loader):
         self.parameters = self._add_api_key(config.get("parameters"))
 
     def _add_api_key(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """add API key to the GET API parameter
+
+        Args:
+            parameters (Dict[str, Any]): previous parameters set
+
+        Returns:
+            Dict[str, Any]: parameters set with added api key
+        """
         parameters["apikey"] = self.__api_key
         return parameters
 
-    def fetch_data(self) -> Any:
+    def fetch_data(self) -> List[Dict[str, Any]]:
+        """ Send the API request to endpoint and get response data
+
+        Returns:
+            List[Dict[str, Any]]: response data, in format of list of dictionaries
+        """
+
         try:
             print(f"Sending GET API Requests to {self.api_url}")
             response = requests.get(self.api_url, self.parameters)

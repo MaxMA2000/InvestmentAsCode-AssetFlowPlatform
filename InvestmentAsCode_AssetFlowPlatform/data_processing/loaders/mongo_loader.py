@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import datetime
-from typing import Dict, Any, Callable, List
+from typing import Dict, Any, Callable, List, Union
 from pymongo import MongoClient
 
 from .loader import Loader
@@ -50,7 +50,12 @@ class MongoLoader(Loader):
       pass
 
 
-    def load_data(self):
+    def load_data(self) -> List[Dict[str, Any]]:
+      """load the data in the target database's collection
+
+      Returns:
+          List[Dict[str, Any]]: collection data, in a format of list of dictionaries
+      """
       db = self.client[self.database_name]
       collection = db[self.collection_name]
 
@@ -64,12 +69,28 @@ class MongoLoader(Loader):
 
     @MongoDBManager.ensure_database_exists
     @MongoDBManager.ensure_collection_exists
-    def load_data_with_checking(self):
+    def load_data_with_checking(self) -> List[Dict[str, Any]]:
+      """load the data in the target database's collection, with checking database and collection existence in advance
+
+      Returns:
+          List[Dict[str, Any]]: collection data, in a format of list of dictionaries
+      """
       return self.load_data()
 
     @MongoDBManager.ensure_database_exists
     @MongoDBManager.ensure_collection_exists
-    def get_collection_min_max_dates(self, date_key: str):
+    def get_collection_min_max_dates(self, date_key: str) -> Union[str, str]:
+      """get the min and max dates value for a date (string format) field in collection
+
+      Args:
+          date_key (str): string representing the field name
+
+      Raises:
+          ValueError: Couldn't find date_key in the database, collection
+
+      Returns:
+          Union[str, str]: min and max date_key value found in collection
+      """
       db = self.client[self.database_name]
       collection = db[self.collection_name]
       dates = [doc[date_key] for doc in collection.find({}, {date_key: 1})]
@@ -85,7 +106,13 @@ class MongoLoader(Loader):
 
 
     @MongoDBManager.ensure_database_exists
-    def get_collection_list_from_database(self):
+    def get_collection_list_from_database(self) -> List[str]:
+      """get the collection names in list of a database
+
+      Returns:
+          List[str]: list of collection names
+      """
+
       db = self.client[self.database_name]
       collection_names = db.list_collection_names()
 
@@ -104,6 +131,14 @@ class MongoLoader(Loader):
     @MongoDBManager.ensure_database_exists
     @MongoDBManager.ensure_collection_exists
     def get_unique_value(self, key: str) -> List[Any]:
+        """get the list of unique value in collection's key field
+
+        Args:
+            key (str): a collection items field string
+
+        Returns:
+            List[Any]: list of unique value in collection's key field
+        """
         db = self.client[self.database_name]
         collection = db[self.collection_name]
         value_list = collection.distinct(key)
@@ -112,6 +147,15 @@ class MongoLoader(Loader):
     @MongoDBManager.ensure_database_exists
     @MongoDBManager.ensure_collection_exists
     def find_items_by_key_value(self, key: str, value: Any) -> List[Any]:
+        """ Find all items in self database-collection, with specific key and value
+
+        Args:
+            key (str): item key
+            value (Any): item value
+
+        Returns:
+            List[Any]: list of dictionaries containing all the matching dictionaries
+        """
         db = self.client[self.database_name]
         collection = db[self.collection_name]
         query = {key: value}
@@ -121,7 +165,18 @@ class MongoLoader(Loader):
 
     @MongoDBManager.ensure_database_exists
     @MongoDBManager.ensure_collection_exists
-    def filter_collection_by_date(self, date_key: str, input_date: str, comparison_operator: str):
+    def filter_collection_by_date(self, date_key: str, input_date: str, comparison_operator: str) -> List[Dict[str, Any]]:
+      """filter the collection items by specifying filtering data with larger, smaller or equal to specify date
+
+      Args:
+          date_key (str): date field string in colelction
+          input_date (str): date value used as comparision
+          comparison_operator (str): >, <, = representing expected filter logic
+
+      Returns:
+          List[Dict[str, Any]]: filtered list of dictionaries
+      """
+
       db = self.client[self.database_name]
       collection = db[self.collection_name]
 

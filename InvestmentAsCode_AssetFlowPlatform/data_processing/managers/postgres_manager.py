@@ -12,7 +12,9 @@ class PostgresManager():
         self.cursor = None
         self.connect()
 
-    def connect(self):
+    def connect(self) -> None:
+        """connect the POSTGRES database with config set in .env
+        """
         self.conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST"),
             port=os.getenv("POSTGRES_PORT"),
@@ -23,11 +25,15 @@ class PostgresManager():
         self.cursor = self.conn.cursor()
 
     def close(self):
+        """close the cursor and conn
+        """
         if self.cursor is not None:
             self.cursor.close()
         if self.conn is not None:
             self.conn.close()
 
     def commit(self):
+        """commit the executions
+        """
         if self.conn is not None:
             self.conn.commit()
