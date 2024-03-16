@@ -231,7 +231,7 @@ def save_data_to_mongo_db(
     # Save the data into MongoDB
     saver_config = {
         "database_name": "ingestion-stock_price",
-        "collection_name": stock_symbol,
+        "collection_name": stock_symbol.upper(),
     }
 
     saver = MongoSaver(saver_config)
