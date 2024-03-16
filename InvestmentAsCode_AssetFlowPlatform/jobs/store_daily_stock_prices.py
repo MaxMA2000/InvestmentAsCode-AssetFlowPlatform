@@ -34,24 +34,17 @@ def task(stock_symbol: str) -> None:
 
     check_stock_symbol_exist(stock_symbol)
 
-    stock_historical_price_data: List[Dict[str, Any]] = fetch_stock_daily_price(
-        stock_symbol
-    )
+    stock_historical_price_data: List[Dict[str, Any]] = fetch_stock_daily_price(stock_symbol)
 
     is_stock_exist_in_collection = check_if_stock_collection_exists(stock_symbol)
 
-    if is_stock_exist_in_collection:
-        transformed_stock_price_data = transform_data_if_stock_collection_exist(
-            stock_symbol, stock_historical_price_data
-        )
+    stock_price_data = get_stock_price_data(is_stock_exist_in_collection, stock_symbol, stock_historical_price_data)
+
+    if stock_price_data is not None:
+      new_stock_prices_to_add = add_symbol_to_stock_price_data(stock_symbol, stock_price_data)
+      save_data_to_mongo_db(stock_symbol, new_stock_prices_to_add)
     else:
-        transformed_stock_price_data = keep_entire_historical_price_data(
-            stock_symbol, stock_historical_price_data
-        )
-    new_stock_prices_to_add = add_symbol_to_stock_price_data(
-        stock_symbol, transformed_stock_price_data
-    )
-    save_data_to_mongo_db(stock_symbol, new_stock_prices_to_add)
+      print(f"Skip saving data as there is no new stock to add for {stock_symbol}")
 
 
 def check_stock_symbol_exist(stock_symbol: str) -> ValueError | None:
@@ -131,75 +124,43 @@ def check_if_stock_collection_exists(stock_symbol: str) -> bool:
     return is_target_stock_collection_exist
 
 
-def transform_data_if_stock_collection_exist(
-    stock_symbol: str, stock_historical_price_data: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
-    """Transform the API-Fetched data, run this logic when stock_symbol prices collection already exist
 
-    Args:
-        stock_symbol (str): unique symbol defining stock
-        stock_historical_price_data (List[Dict[str, Any]]): list of dictionaries containing all the api-fetched data
+def get_stock_price_data(is_stock_exist_in_collection, stock_symbol, stock_historical_price_data):
+    if is_stock_exist_in_collection:
+        print(f"'{stock_symbol}' collection exist in the ingestion-stock_list database, will fetch missing dates prices")
 
-    Returns:
-        List[Dict[str, Any]]: updated list of dictionaries, containing only the new stock prices data to be added
-    """
-    print(
-        f"'{stock_symbol}' collection exist in the ingestion-stock_list database, will fetch missing dates prices"
-    )
+        mongo_general_info_loader = MongoLoader(
+            {"database_name": "ingestion-stock_price", "collection_name": stock_symbol}
+        )
 
-    mongo_general_info_loader = MongoLoader(
-        {"database_name": "ingestion-stock_price", "collection_name": stock_symbol}
-    )
+        mongo_min_date, mongo_max_date = (
+            mongo_general_info_loader.get_collection_min_max_dates("date")
+        )
+        print(f"'{stock_symbol}' Date range in existing MongoDB collection: {mongo_min_date} to {mongo_max_date}")
 
-    mongo_min_date, mongo_max_date = (
-        mongo_general_info_loader.get_collection_min_max_dates("date")
-    )
-    print(
-        f"'{stock_symbol}' Date range in existing MongoDB collection: {mongo_min_date} to {mongo_max_date}"
-    )
+        # api_data_min_date, api_data_max_date = find_min_max_dates(stock_historical_price_data, "date")
+        # print(f"'{stock_symbol}' Date range from new API Fetching: {api_data_min_date} to {api_data_max_date}")
 
-    api_data_min_date, api_data_max_date = find_min_max_dates(
-        stock_historical_price_data, "date"
-    )
-    print(
-        f"'{stock_symbol}' Date range from new API Fetching: {api_data_min_date} to {api_data_max_date}"
-    )
+        print(f" Filtering new api fetched data with only 'date' > {mongo_max_date} ")
 
-    print(f" Filtering new api fetched data with only 'date' > {mongo_max_date} ")
+        # filter the fetched data with the time period > existing max_date
+        new_stock_prices_to_add = [
+            item
+            for item in stock_historical_price_data
+            if mongo_max_date < item["date"] and item["date"] != mongo_max_date
+        ]
 
-    # filter the fetched data with the time period > existing max_date
-    new_stock_prices_to_add = [
-        item
-        for item in stock_historical_price_data
-        if mongo_max_date < item["date"] and item["date"] != mongo_max_date
-    ]
+        append_dates = [stock["date"] for stock in new_stock_prices_to_add]
+        print(f"New stock prices dates to be added: {str(append_dates)}")
+        if len(append_dates) == 0:
+            print("There is no new stock prices to be added")
 
-    append_dates = [stock["date"] for stock in new_stock_prices_to_add]
-    print(f"New stock prices dates to be added: {str(append_dates)}")
-    if len(append_dates) == 0:
-        print("Stop the task as no new stock prices to be added")
-        sys.exit()
+        stock_price_data = new_stock_prices_to_add
+    else:
+        print(f"'{stock_symbol}' collection doesn't exist in the ingestion-stock_list database, will ingest entire fetched dates prices")
+        stock_price_data = stock_historical_price_data
 
-    return new_stock_prices_to_add
-
-
-def keep_entire_historical_price_data(
-    stock_symbol: str, stock_historical_price_data: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
-    """Keep the entire API-Fetched data, run this logic when stock_symbol prices collection not exist
-
-    Args:
-        stock_symbol (str): unique symbol defining stock
-        stock_historical_price_data (List[Dict[str, Any]]): list of dictionaries containing all the api-fetched data
-
-    Returns:
-        List[Dict[str, Any]]: same list of dictionaries of input parameter 'stock_historical_price_data'
-    """
-    new_stock_prices_to_add = stock_historical_price_data
-    print(
-        f"'{stock_symbol}' collection doesn't exist in the ingestion-stock_list database, will ingest entire fetched dates prices"
-    )
-    return new_stock_prices_to_add
+    return stock_price_data
 
 
 def add_symbol_to_stock_price_data(
