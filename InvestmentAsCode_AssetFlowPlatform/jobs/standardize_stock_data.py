@@ -10,9 +10,12 @@ from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.postgres_manage
 
 load_dotenv()
 
-# #######################
-# updated logic
-# #######################
+
+
+def airflow_task(**kwargs):
+    stock_symbol = kwargs.get("stock_symbol")
+    task(stock_symbol)
+
 
 def task(stock_symbol: str) -> None:
 
