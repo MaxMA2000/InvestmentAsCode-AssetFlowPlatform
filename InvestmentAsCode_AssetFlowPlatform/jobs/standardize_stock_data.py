@@ -1,13 +1,13 @@
-from typing import List, Dict, Any, Literal
-import sys
 import os
+import sys
 from datetime import date, datetime
 import psycopg2
-from dotenv import load_dotenv
+from typing import List, Dict, Any, Literal
 
 from InvestmentAsCode_AssetFlowPlatform.data_processing.loaders.mongo_loader import MongoLoader
 from InvestmentAsCode_AssetFlowPlatform.data_processing.managers.postgres_manager import PostgresManager
 
+from dotenv import load_dotenv
 load_dotenv()
 
 
@@ -18,12 +18,16 @@ def airflow_task(**kwargs):
 
 
 def task(stock_symbol: str) -> None:
+  """ Main logic to get stock info and stock prices data from MongoDB and standardize it into Postgres Database
+
+  Args:
+      stock_symbol (str): unique symbol defining stock
+  """
 
   stock_info = get_stock_info(stock_symbol)
 
   # Establish a connection to the PostgreSQL database
   postgre_manager = PostgresManager()
-  conn = postgre_manager.conn
   cursor = postgre_manager.cursor
 
   stock_postgres_asset_id = standardize_stock_info_to_postgres(cursor, stock_symbol, stock_info)
@@ -33,14 +37,26 @@ def task(stock_symbol: str) -> None:
   standardize_stock_price_to_postgresql(cursor, stock_info, to_be_added_stock_price_data, stock_postgres_asset_id)
 
   # Commit the changes to the database
-  conn.commit()
-  cursor.close()
-  conn.close()
+  postgre_manager.commit()
+  postgre_manager.close()
 
 
 
 
 def get_stock_info(stock_symbol: str) -> Dict[str, Any] | ValueError:
+  """ get the stock info data from MongoDB
+
+  Args:
+      stock_symbol (str): unique symbol defining stock
+
+  Raises:
+      ValueError: there is no stock_symbol in mongodb
+      ValueError: there are multiple same stock_symbols found in mongodb
+      ValueError: unexpected cases
+
+  Returns:
+      Dict[str, Any] | ValueError: dictionary data with stock info
+  """
 
   mongo_stock_list_config = {"database_name": "ingestion-general_info", "collection_name": "stock_list"}
   mongo_stock_list_loader = MongoLoader(mongo_stock_list_config)
@@ -59,20 +75,20 @@ def get_stock_info(stock_symbol: str) -> Dict[str, Any] | ValueError:
     raise ValueError(f"stock_in_mongo_stock_list has {len(stock_in_mongo_stock_list)} value, out of expectation handling. Please Check ")
 
 
-# def get_stock_price(stock_symbol: str) -> bool:
-
-#   mongo_stock_price_config = {"database_name": "ingestion-stock_price", "collection_name": stock_symbol.upper()}
-#   mongo_stock_price_loader = MongoLoader(mongo_stock_price_config)
-
-#   # is_stock_collection_exist:bool = mongo_stock_price_loader.manager.check_collection_exists(mongo_stock_price_loader.client, mongo_stock_price_config['database_name'],mongo_stock_price_config['collection_name'] )
-
-#   stock_price_data = mongo_stock_price_loader.load_data_with_checking()
-#   print(mongo_stock_price_loader)
-
-#   return stock_price_data
-
-
 def standardize_stock_info_to_postgres(cursor: psycopg2.extensions.cursor, stock_symbol: str, stock_info: Dict[str, Any]) -> tuple[int]:
+  """standardize the stock info data, write into postgres database
+
+  Args:
+      cursor (psycopg2.extensions.cursor): postgres database cursor
+      stock_symbol (str): unique symbol defining stock
+      stock_info (Dict[str, Any]): stock info data
+
+  Raises:
+      ValueError: there is multiple stock asset_id in postgresql asset table
+
+  Returns:
+      tuple[int]: asset_id for this stock in postgresql asset table
+  """
 
   stock_symbol = stock_symbol
   stock_name = stock_info['name']
@@ -107,7 +123,14 @@ def standardize_stock_info_to_postgres(cursor: psycopg2.extensions.cursor, stock
 
 
 
-def get_to_be_added_stock_price_data(cursor: psycopg2.extensions.cursor, stock_symbol: str):
+def get_to_be_added_stock_price_data(cursor: psycopg2.extensions.cursor, stock_symbol: str) -> None:
+  """ get the stock price data from mongodb and filter based on postgres stock price data date range
+
+  Args:
+      cursor (psycopg2.extensions.cursor): postgres database cursor
+      stock_symbol (str): unique symbol defining stock
+
+  """
 
   # Execute the query to find min and max dates
   query = f"SELECT MIN(as_of_date), MAX(as_of_date) FROM stock WHERE symbol = '{stock_symbol}'"
@@ -138,7 +161,16 @@ def get_to_be_added_stock_price_data(cursor: psycopg2.extensions.cursor, stock_s
   return to_be_added_stock_price_data
 
 
-def standardize_stock_price_to_postgresql(cursor: psycopg2.extensions.cursor, stock_info: Dict[str, Any], to_be_added_stock_price_data: List[Dict[str, Any]], stock_postgres_asset_id: tuple):
+def standardize_stock_price_to_postgresql(cursor: psycopg2.extensions.cursor, stock_info: Dict[str, Any], to_be_added_stock_price_data: List[Dict[str, Any]], stock_postgres_asset_id: tuple) -> None:
+  """ take the stock info data, to be added stock price data, asset_id for stock in asset table and insert into postgres database
+
+  Args:
+      cursor (psycopg2.extensions.cursor): postgres database cursor
+      stock_info (Dict[str, Any]): stock info data
+      to_be_added_stock_price_data (List[Dict[str, Any]]): stock price data to be added
+      stock_postgres_asset_id (tuple): asset_id for stock in asset table
+
+  """
 
   if len(to_be_added_stock_price_data) == 0:
     print("No new stock prices need to be added today, Finish the Program.")
