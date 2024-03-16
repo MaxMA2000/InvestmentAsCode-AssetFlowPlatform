@@ -20,19 +20,24 @@ from InvestmentAsCode_AssetFlowPlatform.utils.common_utils import (
 )
 
 
-
 def airflow_task(**kwargs):
-  stock_symbol = kwargs.get("stock_symbol")
-  task(stock_symbol)
+    stock_symbol = kwargs.get("stock_symbol")
+    task(stock_symbol)
 
 
-def task(stock_symbol):
+def task(stock_symbol: str) -> None:
+    """Main logic to fetch 'stock_symbol' stock prices, transform and write into MongoDB
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+    """
 
     check_stock_symbol_exist(stock_symbol)
 
     stock_historical_price_data: List[Dict[str, Any]] = fetch_stock_daily_price(
         stock_symbol
     )
+
     is_stock_exist_in_collection = check_if_stock_collection_exists(stock_symbol)
 
     if is_stock_exist_in_collection:
@@ -43,11 +48,25 @@ def task(stock_symbol):
         transformed_stock_price_data = keep_entire_historical_price_data(
             stock_symbol, stock_historical_price_data
         )
-    new_stock_prices_to_add = add_symbol_to_stock_price_data(stock_symbol, transformed_stock_price_data)
+    new_stock_prices_to_add = add_symbol_to_stock_price_data(
+        stock_symbol, transformed_stock_price_data
+    )
     save_data_to_mongo_db(stock_symbol, new_stock_prices_to_add)
 
 
 def check_stock_symbol_exist(stock_symbol: str) -> ValueError | None:
+    """Check if the stock_symbol exists in the "ingestion-general_info/stock_list"
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+
+    Raises:
+        ValueError: raise the error when stock symbol is not founded in stock_list collection,
+                    meaning that source API doesn't support this stock, or stock_symbol is wrong
+
+    Returns:
+        ValueError | None: pass the checking and avoid raising error if found stock_symbol in stock_list collection
+    """
     # Load the data from MongoDB
     mongo_general_info_loader = MongoLoader(
         {"database_name": "ingestion-general_info", "collection_name": "stock_list"}
@@ -68,6 +87,14 @@ def check_stock_symbol_exist(stock_symbol: str) -> ValueError | None:
 
 
 def fetch_stock_daily_price(stock_symbol: str) -> List[Dict[str, Any]] | str:
+    """Send API to fetch daily stock prices for stock_symbol
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+
+    Returns:
+        List[Dict[str, Any]] | str: a list of dictionary, each containing stock prices collection for a given trading date
+    """
     # Load the data from API
     api_loader_config = {
         "api_url": f"https://financialmodelingprep.com/api/v3/historical-price-full/{stock_symbol}",
@@ -84,6 +111,14 @@ def fetch_stock_daily_price(stock_symbol: str) -> List[Dict[str, Any]] | str:
 
 
 def check_if_stock_collection_exists(stock_symbol: str) -> bool:
+    """To check if the collection already exists in current MongoDB "ingestion-stock_price" datbase
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+
+    Returns:
+        bool: True / False representing whether collection exists already
+    """
 
     mongo_general_info_loader = MongoLoader(
         {"database_name": "ingestion-stock_price", "collection_name": stock_symbol}
@@ -98,7 +133,16 @@ def check_if_stock_collection_exists(stock_symbol: str) -> bool:
 
 def transform_data_if_stock_collection_exist(
     stock_symbol: str, stock_historical_price_data: List[Dict[str, Any]]
-):
+) -> List[Dict[str, Any]]:
+    """Transform the API-Fetched data, run this logic when stock_symbol prices collection already exist
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+        stock_historical_price_data (List[Dict[str, Any]]): list of dictionaries containing all the api-fetched data
+
+    Returns:
+        List[Dict[str, Any]]: updated list of dictionaries, containing only the new stock prices data to be added
+    """
     print(
         f"'{stock_symbol}' collection exist in the ingestion-stock_list database, will fetch missing dates prices"
     )
@@ -107,23 +151,27 @@ def transform_data_if_stock_collection_exist(
         {"database_name": "ingestion-stock_price", "collection_name": stock_symbol}
     )
 
-    min_date, max_date = mongo_general_info_loader.get_collection_min_max_dates("date")
+    mongo_min_date, mongo_max_date = (
+        mongo_general_info_loader.get_collection_min_max_dates("date")
+    )
     print(
-        f"'{stock_symbol}' Current Date range in existing collection: {min_date} to {max_date}"
+        f"'{stock_symbol}' Date range in existing MongoDB collection: {mongo_min_date} to {mongo_max_date}"
     )
 
-    new_data_min_date, new_data_max_date = find_min_max_dates(
+    api_data_min_date, api_data_max_date = find_min_max_dates(
         stock_historical_price_data, "date"
     )
     print(
-        f"'{stock_symbol}' Current Date range from new API Fetching: {new_data_min_date} to {new_data_max_date}"
+        f"'{stock_symbol}' Date range from new API Fetching: {api_data_min_date} to {api_data_max_date}"
     )
+
+    print(f" Filtering new api fetched data with only 'date' > {mongo_max_date} ")
 
     # filter the fetched data with the time period > existing max_date
     new_stock_prices_to_add = [
         item
         for item in stock_historical_price_data
-        if max_date < item["date"] and item["date"] != max_date
+        if mongo_max_date < item["date"] and item["date"] != mongo_max_date
     ]
 
     append_dates = [stock["date"] for stock in new_stock_prices_to_add]
@@ -135,21 +183,51 @@ def transform_data_if_stock_collection_exist(
     return new_stock_prices_to_add
 
 
-def keep_entire_historical_price_data(stock_symbol: str, stock_historical_price_data):
+def keep_entire_historical_price_data(
+    stock_symbol: str, stock_historical_price_data: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Keep the entire API-Fetched data, run this logic when stock_symbol prices collection not exist
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+        stock_historical_price_data (List[Dict[str, Any]]): list of dictionaries containing all the api-fetched data
+
+    Returns:
+        List[Dict[str, Any]]: same list of dictionaries of input parameter 'stock_historical_price_data'
+    """
     new_stock_prices_to_add = stock_historical_price_data
     print(
-        f"'{stock_symbol}' collection doesn't exist in the ingestion-stock_list database, will fetch entire dates prices"
+        f"'{stock_symbol}' collection doesn't exist in the ingestion-stock_list database, will ingest entire fetched dates prices"
     )
     return new_stock_prices_to_add
 
 
-def add_symbol_to_stock_price_data(stock_symbol: str, stock_historical_price_data):
-      for item in stock_historical_price_data:
-        item['stock_symbol'] = stock_symbol
-      return stock_historical_price_data
+def add_symbol_to_stock_price_data(
+    stock_symbol: str, stock_historical_price_data: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """_summary_
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+        stock_historical_price_data (List[Dict[str, Any]]): updated list of dictionaries containing stock historical data
+
+    Returns:
+        List[Dict[str, Any]]: list of dictionaries, with each dictionary added {'stock_symbol': XX}
+    """
+    for item in stock_historical_price_data:
+        item["stock_symbol"] = stock_symbol
+    return stock_historical_price_data
 
 
-def save_data_to_mongo_db(stock_symbol: str, new_stock_prices_to_add) -> None:
+def save_data_to_mongo_db(
+    stock_symbol: str, new_stock_prices_to_add: List[Dict[str, Any]]
+) -> None:
+    """save the transformed stock price data into MongoDB
+
+    Args:
+        stock_symbol (str): unique symbol defining stock
+        new_stock_prices_to_add (List[Dict[str, Any]]): updated list of dictionaries containing stock historical data
+    """
     # Save the data into MongoDB
     saver_config = {
         "database_name": "ingestion-stock_price",
@@ -161,4 +239,4 @@ def save_data_to_mongo_db(stock_symbol: str, new_stock_prices_to_add) -> None:
 
 
 if __name__ == "__main__":
-    task()
+    task("AAPL")  # take AAPL as example
