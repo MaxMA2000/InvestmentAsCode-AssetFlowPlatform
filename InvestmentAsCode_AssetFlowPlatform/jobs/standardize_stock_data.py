@@ -174,7 +174,7 @@ def get_to_be_added_stock_price_data(
     """
 
     # Execute the query to find min and max dates
-    query = f"SELECT MIN(as_of_date), MAX(as_of_date) FROM stock WHERE symbol = '{stock_symbol}'"
+    query = f"SELECT MIN(date), MAX(date) FROM stock WHERE symbol = '{stock_symbol}'"
     cursor.execute(query)
 
     # Fetch the result
