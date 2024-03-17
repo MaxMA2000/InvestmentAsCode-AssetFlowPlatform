@@ -4,6 +4,9 @@ export SUPERSET_CONFIG_PATH=/Users/maxma/Desktop/InvestmentAsCode-Master-Repo/In
 
 superset run -p 8088 --with-threads --reload --debugger
 
+# http://localhost:8088
+# username: admin
+# password: admin
 
 # M1 Installation Guide: https://www.restack.io/docs/superset-knowledge-apache-superset-mac-m1-guide
 # Official Installation: https://superset.apache.org/docs/installation/installing-superset-from-pypi

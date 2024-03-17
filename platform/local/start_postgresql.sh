@@ -6,6 +6,8 @@ export PGDATA="/Users/maxma/Library/Application Support/Postgres/InvestmentAsCod
 
 postgres
 
+# localhost:5432
+
 
 # https://www.postgresql.org/download/macosx/
 
