@@ -5,6 +5,7 @@ from datetime import datetime
 
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_stock_list
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_daily_stock_prices
+from InvestmentAsCode_AssetFlowPlatform.jobs import standardize_stock_data
 
 stock_symbols = ["AAPL", "NVDA", "TSLA"]
 
@@ -29,12 +30,23 @@ with DAG(
     with TaskGroup("ingest_daily_stock_prices") as ingest_daily_stock_prices:
         tasks = []
         for stock_symbol in stock_symbols:
-            task = PythonOperator(
+            ingest_task = PythonOperator(
                 task_id=f"ingest_daily_stock_price_{stock_symbol}",
                 python_callable=store_daily_stock_prices.airflow_task,
                 op_kwargs={"stock_symbol": stock_symbol}
             )
-            tasks.append(task)
+
+            standardize_task = PythonOperator(
+                task_id=f"standardize_stock_data_{stock_symbol}",
+                python_callable=standardize_stock_data.airflow_task,
+                op_kwargs={"stock_symbol": stock_symbol}
+            )
+
+            ingest_task >> standardize_task
+
+            tasks.append(ingest_task)
+            tasks.append(standardize_task)
+
 
         tasks  # Add all tasks to the task group
 

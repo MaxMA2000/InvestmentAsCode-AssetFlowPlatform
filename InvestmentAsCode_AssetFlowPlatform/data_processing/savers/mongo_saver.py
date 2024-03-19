@@ -21,7 +21,12 @@ class MongoSaver(Saver):
         self.client = self.manager.connect_mongo_db()
 
 
-    def save_data(self, data: List[Dict[str, Any]]):
+    def save_data(self, data: List[Dict[str, Any]]) -> None:
+        """save data into existing collection in database
+
+        Args:
+            data (List[Dict[str, Any]]): data to be stored, in a list of dictionaries format
+        """
         db = self.client[self.database_name]
         collection = db[self.collection_name]
 
@@ -30,7 +35,12 @@ class MongoSaver(Saver):
         collection.insert_many(data)
         print(f"Finish writing data to MongoDB")
 
-    def replace_collection(self, data: List[Dict[str, Any]]):
+    def replace_collection(self, data: List[Dict[str, Any]]) -> None:
+        """replace the entire collection with input data
+
+        Args:
+            data (List[Dict[str, Any]]): data to be stored, in a list of dictionaries format
+        """
         self.manager.remove_collection(self.client,
                                        self.database_name,
                                        self.collection_name)
