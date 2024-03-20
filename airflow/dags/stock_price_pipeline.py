@@ -3,9 +3,9 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime
 
-from InvestmentAsCode_AssetFlowPlatform.jobs import store_stock_list
-from InvestmentAsCode_AssetFlowPlatform.jobs import store_daily_stock_prices
-from InvestmentAsCode_AssetFlowPlatform.jobs import standardize_stock_data
+from InvestmentAsCode_AssetFlowPlatform.jobs.stock_pipeline import store_stock_list
+from InvestmentAsCode_AssetFlowPlatform.jobs.stock_pipeline import store_daily_stock_prices
+from InvestmentAsCode_AssetFlowPlatform.jobs.stock_pipeline import standardize_stock_data
 
 stock_symbols = ["AAPL", "NVDA", "TSLA"]
 
