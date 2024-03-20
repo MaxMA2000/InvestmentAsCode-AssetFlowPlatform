@@ -4,7 +4,6 @@ from datetime import datetime
 
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_company_general_info
 from InvestmentAsCode_AssetFlowPlatform.jobs import store_etf_list
-from InvestmentAsCode_AssetFlowPlatform.jobs import store_stock_list
 
 schedule_interval = "0 15 * * *"
 
