@@ -1,7 +1,7 @@
 
 DROP TABLE IF EXISTS stock;
-DROP TABLE IF EXISTS asset;
 DROP TABLE IF EXISTS crypto;
+DROP TABLE IF EXISTS asset;
 
 
 -- Create Asset table
