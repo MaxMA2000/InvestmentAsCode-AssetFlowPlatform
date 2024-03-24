@@ -1,6 +1,10 @@
 echo "starting Superset"
+# superset db upgrade
 export FLASK_APP=superset
 export SUPERSET_CONFIG_PATH=/Users/maxma/Desktop/InvestmentAsCode-Master-Repo/InvestmentAsCode-Asset-Flow-Platform/platform/local/superset_config.py
+# superset fab create-admin
+# superset init
+
 
 superset run -p 8088 --with-threads --reload --debugger
 
