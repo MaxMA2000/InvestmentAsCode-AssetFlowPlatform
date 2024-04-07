@@ -15,8 +15,10 @@ CREATE TABLE asset (
   as_of_date DATE
 );
 
+
 -- Create Stock table
 CREATE TABLE stock (
+  id SERIAL PRIMARY KEY,
   asset_id INT,
   symbol VARCHAR(255),
   date DATE,
@@ -33,12 +35,11 @@ CREATE TABLE stock (
   label VARCHAR(255),
   change_over_time FLOAT,
   as_of_date DATE,
-  PRIMARY KEY (asset_id, date),
   FOREIGN KEY (asset_id) REFERENCES Asset (asset_id)
 );
-
 -- Create Crypto table
 CREATE TABLE crypto (
+  id SERIAL PRIMARY KEY,
   asset_id INT,
   symbol VARCHAR(255),
   date DATE,
@@ -55,7 +56,6 @@ CREATE TABLE crypto (
   label VARCHAR(255),
   change_over_time DECIMAL(18, 8),
   as_of_date DATE,
-  PRIMARY KEY (asset_id, date),
   FOREIGN KEY (asset_id) REFERENCES Asset (asset_id)
 );
 
