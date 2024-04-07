@@ -9,7 +9,7 @@ schedule_interval = "0 15 * * *"
 
 default_args = {
     "owner": "airflow",
-    "start_date": datetime(2024, 3, 5),
+    "start_date": datetime(2024, 4, 7),
 }
 
 with DAG(
